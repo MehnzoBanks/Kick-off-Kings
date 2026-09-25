@@ -209,10 +209,100 @@ class NewsTile extends StatelessWidget {
   );
 }
 
-class MatchesPage extends StatelessWidget {
+class MatchesPage extends StatefulWidget {
   const MatchesPage({super.key});
+
   @override
-  Widget build(BuildContext context) => const SimplePage(title: 'Matches', icon: Icons.sports_soccer, message: 'Live scores, fixtures and results will appear here.');
+  State<MatchesPage> createState() => _MatchesPageState();
+}
+
+class _MatchesPageState extends State<MatchesPage> {
+  late Future<List<FootballMatch>> matches;
+
+  @override
+  void initState() {
+    super.initState();
+    matches = FootballApi.getTodayFixtures();
+  }
+
+  void refresh() {
+    setState(() {
+      matches = FootballApi.getTodayFixtures();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 12, 10),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Matches',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: refresh,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<FootballMatch>>(
+              future: matches,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return ErrorBox(
+                    message: snapshot.error.toString(),
+                    onRetry: refresh,
+                  );
+                }
+
+                final data = snapshot.data ?? [];
+
+                if (data.isEmpty) {
+                  return const EmptyBox(
+                    message: 'No matches found today.',
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    refresh();
+                    await matches;
+                  },
+                  child: ListView.builder(
+                    itemCount: data.length,
+                    itemBuilder: (context, index) {
+                      return MatchTile(
+                        match: data[index],
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class NewsPage extends StatelessWidget {
