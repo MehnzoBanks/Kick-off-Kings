@@ -305,6 +305,299 @@ class _MatchesPageState extends State<MatchesPage> {
   }
 }
 
+class FootballApi {
+  static const String apiKey =
+      String.fromEnvironment('API_FOOTBALL_KEY');
+
+  static const String baseUrl =
+      'https://v3.football.api-sports.io';
+
+  static Future<List<FootballMatch>> getTodayFixtures() async {
+    if (apiKey.isEmpty) {
+      throw Exception('API key was not included in this build.');
+    }
+
+    final now = DateTime.now();
+
+    final date =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+
+    final uri = Uri.parse(
+      '$baseUrl/fixtures?date=$date&timezone=Africa/Lagos',
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'x-apisports-key': apiKey,
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Football API error: ${response.statusCode}',
+      );
+    }
+
+    final json = jsonDecode(response.body);
+
+    if (json['errors'] != null &&
+        json['errors'].toString() != '{}') {
+      throw Exception(
+        'API error: ${json['errors']}',
+      );
+    }
+
+    final List<dynamic> responseData =
+        json['response'] ?? [];
+
+    return responseData
+        .map((item) => FootballMatch.fromJson(item))
+        .toList();
+  }
+}
+
+class FootballMatch {
+  final String league;
+  final String homeTeam;
+  final String awayTeam;
+  final String homeLogo;
+  final String awayLogo;
+  final String homeScore;
+  final String awayScore;
+  final String status;
+
+  FootballMatch({
+    required this.league,
+    required this.homeTeam,
+    required this.awayTeam,
+    required this.homeLogo,
+    required this.awayLogo,
+    required this.homeScore,
+    required this.awayScore,
+    required this.status,
+  });
+
+  factory FootballMatch.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final fixture = json['fixture'] ?? {};
+    final teams = json['teams'] ?? {};
+    final goals = json['goals'] ?? {};
+    final leagueData = json['league'] ?? {};
+
+    return FootballMatch(
+      league: leagueData['name'] ?? 'Football',
+      homeTeam: teams['home']?['name'] ?? 'Home',
+      awayTeam: teams['away']?['name'] ?? 'Away',
+      homeLogo: teams['home']?['logo'] ?? '',
+      awayLogo: teams['away']?['logo'] ?? '',
+      homeScore: goals['home']?.toString() ?? '-',
+      awayScore: goals['away']?.toString() ?? '-',
+      status: fixture['status']?['short'] ?? 'NS',
+    );
+  }
+}
+
+class MatchTile extends StatelessWidget {
+  final FootballMatch match;
+
+  const MatchTile({
+    super.key,
+    required this.match,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 6,
+      ),
+      color: const Color(0xFF12161D),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    match.league,
+                    style: const TextStyle(
+                      color: Color(0xFF16C784),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  match.status,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TeamName(
+                    name: match.homeTeam,
+                    logo: match.homeLogo,
+                  ),
+                ),
+                Text(
+                  '${match.homeScore} - ${match.awayScore}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Expanded(
+                  child: TeamName(
+                    name: match.awayTeam,
+                    logo: match.awayLogo,
+                    right: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TeamName extends StatelessWidget {
+  final String name;
+  final String logo;
+  final bool right;
+
+  const TeamName({
+    super.key,
+    required this.name,
+    required this.logo,
+    this.right = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+          right
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+      children: [
+        if (logo.isNotEmpty)
+          Image.network(
+            logo,
+            width: 34,
+            height: 34,
+            errorBuilder: (_, __, ___) {
+              return const Icon(
+                Icons.shield_outlined,
+                size: 34,
+              );
+            },
+          ),
+        const SizedBox(height: 6),
+        Text(
+          name,
+          textAlign:
+              right ? TextAlign.right : TextAlign.left,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ErrorBox extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const ErrorBox({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 45,
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Unable to load football data',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white60,
+              ),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EmptyBox extends StatelessWidget {
+  final String message;
+
+  const EmptyBox({
+    super.key,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+}
 class NewsPage extends StatelessWidget {
   const NewsPage({super.key});
   @override
