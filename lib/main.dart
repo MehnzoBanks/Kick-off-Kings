@@ -1390,7 +1390,6 @@ class NewsListCard extends StatelessWidget {
     );
   }
 }
-
 // ============================================================
 // NEWS DETAIL
 // ============================================================
@@ -1412,18 +1411,47 @@ class NewsDetailPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              color: const Color(0xFF183D2E),
+          if (article.imageUrl.isNotEmpty)
+            ClipRRect(
+              borderRadius:
+                  BorderRadius.circular(22),
+              child: Image.network(
+                article.imageUrl,
+                height: 230,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Container(
+                    height: 230,
+                    decoration: BoxDecoration(
+                      color:
+                          const Color(0xFF183D2E),
+                      borderRadius:
+                          BorderRadius.circular(22),
+                    ),
+                    child: const Icon(
+                      Icons.sports_soccer,
+                      size: 100,
+                      color: Colors.greenAccent,
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              height: 230,
+              decoration: BoxDecoration(
+                color: const Color(0xFF183D2E),
+                borderRadius:
+                    BorderRadius.circular(22),
+              ),
+              child: const Icon(
+                Icons.sports_soccer,
+                size: 100,
+                color: Colors.greenAccent,
+              ),
             ),
-            child: Icon(
-              article.icon,
-              size: 100,
-              color: Colors.greenAccent,
-            ),
-          ),
 
           const SizedBox(height: 20),
 
@@ -1446,14 +1474,29 @@ class NewsDetailPage extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          const Text(
-            'Kickoff Kings • Latest',
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 12,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  article.source,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                formatNewsTime(
+                  article.publishedAt,
+                ),
+                style: const TextStyle(
+                  color: Colors.white38,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 25),
@@ -1467,20 +1510,72 @@ class NewsDetailPage extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(height: 25),
+
+          if (article.articleUrl.isNotEmpty)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Opening the original article will be added next.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.open_in_new,
+                ),
+                label: const Text(
+                  'Read Original Article',
+                ),
+              ),
+            ),
+
           const SizedBox(height: 20),
 
           const Text(
-            'More football news and updates will appear here as the Kickoff Kings news feed is connected to a live news source.',
+            'Kickoff Kings • News',
             style: TextStyle(
-              fontSize: 16,
-              height: 1.6,
-              color: Colors.white60,
+              color: Colors.white38,
+              fontSize: 12,
             ),
           ),
         ],
       ),
     );
   }
+}
+
+
+// ============================================================
+// NEWS TIME FORMAT
+// ============================================================
+
+String formatNewsTime(DateTime date) {
+  final difference =
+      DateTime.now().difference(date);
+
+  if (difference.inMinutes < 1) {
+    return 'Just now';
+  }
+
+  if (difference.inMinutes < 60) {
+    return '${difference.inMinutes}m ago';
+  }
+
+  if (difference.inHours < 24) {
+    return '${difference.inHours}h ago';
+  }
+
+  if (difference.inDays < 7) {
+    return '${difference.inDays}d ago';
+  }
+
+  return '${date.day}/${date.month}/${date.year}';
 }
 
 // ============================================================
