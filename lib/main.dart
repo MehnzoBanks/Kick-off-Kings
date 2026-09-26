@@ -1166,7 +1166,7 @@ class NewsArticle {
   final String imageUrl;
   final String articleUrl;
   final String source;
-  final DateTime publishedAt;
+  final DateTime? publishedAt;
   final IconData icon;
 
   const NewsArticle({
@@ -1176,7 +1176,7 @@ class NewsArticle {
   this.imageUrl = '',
   this.articleUrl = '',
   this.source = 'Kickoff Kings',
-  this.publishedAt = const DateTime(2026, 1, 1),
+  this.publishedAt,
   required this.icon,
 });
 
@@ -1584,8 +1584,8 @@ class NewsDetailPage extends StatelessWidget {
               ),
               Text(
                 formatNewsTime(
-                  article.publishedAt,
-                ),
+  article.publishedAt ?? DateTime.now(),
+),
                 style: const TextStyle(
                   color: Colors.white38,
                   fontSize: 12,
