@@ -871,7 +871,6 @@ class FootballApi {
   }
 }
 
-
 // ============================================================
 // NEWS PAGE
 // ============================================================
@@ -886,7 +885,9 @@ class NewsPage extends StatefulWidget {
 class _NewsPageState extends State<NewsPage> {
   String selectedCategory = 'All';
 
-  final List<String> categories = const [
+  late Future<List<NewsArticle>> newsFuture;
+
+  final List<String> categories = [
     'All',
     'Premier League',
     'Champions League',
@@ -894,269 +895,251 @@ class _NewsPageState extends State<NewsPage> {
     'World Football',
   ];
 
-  final List<NewsArticle> articles = const [
-    NewsArticle(
-      category: 'Premier League',
-      title: 'Premier League latest news and updates',
-      description:
-          'Get the latest stories, results and developments from England’s top flight.',
-      icon: Icons.emoji_events,
-    ),
-    NewsArticle(
-      category: 'Champions League',
-      title: 'Champions League latest updates',
-      description:
-          'Follow the biggest stories from Europe’s premier club competition.',
-      icon: Icons.star,
-    ),
-    NewsArticle(
-      category: 'Transfers',
-      title: 'Latest transfer news and rumours',
-      description:
-          'Keep up with the latest transfer activity from clubs around the world.',
-      icon: Icons.swap_horiz,
-    ),
-    NewsArticle(
-      category: 'World Football',
-      title: 'World football latest',
-      description:
-          'The biggest football stories from leagues and competitions around the world.',
-      icon: Icons.public,
-    ),
-    NewsArticle(
-      category: 'Premier League',
-      title: 'Premier League fixtures and results',
-      description:
-          'Stay up to date with fixtures, results and important league developments.',
-      icon: Icons.sports_soccer,
-    ),
-    NewsArticle(
-      category: 'World Football',
-      title: 'Football stories from around the world',
-      description:
-          'Major football developments, teams, players and competitions.',
-      icon: Icons.language,
-    ),
-  ];
-
-  List<NewsArticle> get filteredArticles {
-    if (selectedCategory == 'All') {
-      return articles;
-    }
-
-    return articles
-        .where(
-          (article) =>
-              article.category == selectedCategory,
-        )
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    newsFuture = NewsApi.fetchNews('football');
   }
 
-  Future<void> refreshNews() async {
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    );
+  void loadCategory(String category) {
+    setState(() {
+      selectedCategory = category;
 
-    if (mounted) {
-      setState(() {});
-    }
+      String query;
+
+      switch (category) {
+        case 'Premier League':
+          query = 'football AND "Premier League"';
+          break;
+
+        case 'Champions League':
+          query = 'football AND "Champions League"';
+          break;
+
+        case 'Transfers':
+          query =
+              'football AND (transfer OR signing OR "transfer window")';
+          break;
+
+        case 'World Football':
+          query = 'football';
+          break;
+
+        default:
+          query = 'football';
+      }
+
+      newsFuture = NewsApi.fetchNews(query);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = filteredArticles;
-
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: refreshNews,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            18,
-            16,
-            30,
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0F0D),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0B0F0D),
+        title: const Text(
+          'Football News',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
           ),
-          children: [
-            // ------------------------------------------------
-            // HEADER
-            // ------------------------------------------------
-
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'News',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF14251F),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: IconButton(
-                    onPressed: refreshNews,
-                    icon: const Icon(
-                      Icons.refresh,
-                      color: Colors.greenAccent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              'The latest football stories',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
+        ),
+      ),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 55,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
               ),
-            ),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                final selected = category == selectedCategory;
 
-            const SizedBox(height: 20),
-
-            // ------------------------------------------------
-            // CATEGORY FILTERS
-            // ------------------------------------------------
-
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  final isSelected =
-                      category == selectedCategory;
-
-                  return ChoiceChip(
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
                     label: Text(category),
-                    selected: isSelected,
+                    selected: selected,
                     onSelected: (_) {
-                      setState(() {
-                        selectedCategory = category;
-                      });
+                      loadCategory(category);
                     },
-                    selectedColor:
-                        Colors.green.shade700,
-                    backgroundColor:
-                        const Color(0xFF12161D),
+                    selectedColor: Colors.green,
+                    backgroundColor: const Color(0xFF1A211D),
                     labelStyle: TextStyle(
-                      color: isSelected
+                      color: selected
                           ? Colors.white
                           : Colors.white70,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: selected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? Colors.green
-                          : Colors.white12,
+                  ),
+                );
+              },
+            ),
+          ),
+
+          Expanded(
+            child: FutureBuilder<List<NewsArticle>>(
+              future: newsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.green,
                     ),
                   );
-                },
-              ),
-            ),
+                }
 
-            const SizedBox(height: 25),
-
-            // ------------------------------------------------
-            // FEATURED STORY
-            // ------------------------------------------------
-
-            if (filtered.isNotEmpty) ...[
-              const Text(
-                'Featured',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              FeaturedNewsCard(
-                article: filtered.first,
-              ),
-
-              const SizedBox(height: 28),
-            ],
-
-            // ------------------------------------------------
-            // LATEST NEWS
-            // ------------------------------------------------
-
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Latest News',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${filtered.length} stories',
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            if (filtered.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF12161D),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Column(
-                  children: [
-                    Icon(
-                      Icons.article_outlined,
-                      size: 45,
-                      color: Colors.white38,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'No news available',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        snapshot.error.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              )
-            else
-              ...filtered
-                  .skip(1)
-                  .map(
-                    (article) => NewsListCard(
-                      article: article,
+                  );
+                }
+
+                final articles = snapshot.data ?? [];
+
+                if (articles.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No football stories found.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                      ),
                     ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  color: Colors.green,
+                  onRefresh: () async {
+                    setState(() {
+                      loadCategory(selectedCategory);
+                    });
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      FeaturedNewsCard(
+                        article: articles.first,
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      const Text(
+                        'Latest News',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      ...articles.skip(1).map(
+                        (article) => NewsListCard(
+                          article: article,
+                        ),
+                      ),
+                    ],
                   ),
-          ],
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // ============================================================
-// NEWS MODEL
+// NEWS API
+// ============================================================
+
+class NewsApi {
+  static const String key =
+      String.fromEnvironment('GNEWS_API_KEY');
+
+  static const String base =
+      'https://gnews.io/api/v4/search';
+
+  static Future<List<NewsArticle>> fetchNews(
+    String query,
+  ) async {
+    if (key.isEmpty) {
+      throw Exception(
+        'GNews API key is missing. Check GNEWS_API_KEY in GitHub Actions.',
+      );
+    }
+
+    final uri = Uri.parse(base).replace(
+      queryParameters: {
+        'q': query,
+        'lang': 'en',
+        'max': '10',
+        'sortby': 'publishedAt',
+        'nullable': 'image,description',
+        'apikey': key,
+      },
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      String message = response.body;
+
+      try {
+        final errorData = jsonDecode(response.body);
+
+        if (errorData is Map &&
+            errorData['errors'] != null) {
+          message = errorData['errors'].toString();
+        }
+      } catch (_) {}
+
+      throw Exception(
+        'GNews error ${response.statusCode}: $message',
+      );
+    }
+
+    final data = jsonDecode(response.body);
+
+    final articles = data['articles'];
+
+    if (articles is! List) {
+      return [];
+    }
+
+    return articles
+        .map(
+          (item) => NewsArticle.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+        .toList();
+  }
+}
+
+// ============================================================
+// NEWS ARTICLE MODEL
 // ============================================================
 
 class NewsArticle {
@@ -1169,69 +1152,51 @@ class NewsArticle {
   final DateTime? publishedAt;
   final IconData icon;
 
-  const NewsArticle({
-  required this.category,
-  required this.title,
-  required this.description,
-  this.imageUrl = '',
-  this.articleUrl = '',
-  this.source = 'Kickoff Kings',
-  this.publishedAt,
-  required this.icon,
-});
+  NewsArticle({
+    required this.category,
+    required this.title,
+    required this.description,
+    this.imageUrl = '',
+    this.articleUrl = '',
+    this.source = 'GNews',
+    this.publishedAt,
+    this.icon = Icons.sports_soccer,
+  });
 
   factory NewsArticle.fromJson(
     Map<String, dynamic> json,
   ) {
-    final sourceData = json['source'];
-
-    String sourceName = 'Football News';
-
-    if (sourceData is Map) {
-      sourceName =
-          sourceData['name']?.toString() ??
-              'Football News';
-    }
-
     final title =
-        json['title']?.toString() ??
-            'Football News';
+        json['title']?.toString() ?? 'Football News';
 
     final description =
-        json['description']?.toString() ??
-            'Latest football news and updates.';
+        json['description']?.toString() ?? '';
 
-    final image =
-        json['image']?.toString() ?? '';
-
-    final url =
-        json['url']?.toString() ?? '';
-
-    final published =
-        DateTime.tryParse(
-          json['publishedAt']?.toString() ?? '',
-        ) ??
-        DateTime.now();
+    final content =
+        '$title $description'.toLowerCase();
 
     return NewsArticle(
-      category: detectCategory(title),
+      category: detectCategory(content),
       title: title,
       description: description,
-      imageUrl: image,
-      articleUrl: url,
-      source: sourceName,
-      publishedAt: published.toLocal(),
-      icon: detectIcon(title),
+      imageUrl:
+          json['image']?.toString() ?? '',
+      articleUrl:
+          json['url']?.toString() ?? '',
+      source:
+          json['source']?['name']?.toString() ?? 'GNews',
+      publishedAt:
+          DateTime.tryParse(
+        json['publishedAt']?.toString() ?? '',
+      ),
+      icon: detectIcon(content),
     );
   }
 
-  static String detectCategory(String title) {
-    final text = title.toLowerCase();
-
+  static String detectCategory(String text) {
     if (text.contains('transfer') ||
         text.contains('signing') ||
-        text.contains('joins') ||
-        text.contains('deal')) {
+        text.contains('transfer window')) {
       return 'Transfers';
     }
 
@@ -1246,25 +1211,21 @@ class NewsArticle {
     return 'World Football';
   }
 
-  static IconData detectIcon(String title) {
-    final text = title.toLowerCase();
-
+  static IconData detectIcon(String text) {
     if (text.contains('transfer') ||
-        text.contains('signing') ||
-        text.contains('joins') ||
-        text.contains('deal')) {
+        text.contains('signing')) {
       return Icons.swap_horiz;
     }
 
     if (text.contains('champions league')) {
-      return Icons.star;
-    }
-
-    if (text.contains('premier league')) {
       return Icons.emoji_events;
     }
 
-    return Icons.sports_soccer;
+    if (text.contains('premier league')) {
+      return Icons.sports_soccer;
+    }
+
+    return Icons.public;
   }
 }
 
@@ -1282,8 +1243,7 @@ class FeaturedNewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
+    return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
@@ -1295,36 +1255,61 @@ class FeaturedNewsCard extends StatelessWidget {
         );
       },
       child: Container(
-        height: 230,
+        height: 240,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF183D2E),
-              Color(0xFF0E1713),
-            ],
-          ),
+          color: const Color(0xFF17201A),
+          borderRadius: BorderRadius.circular(18),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Icon(
-                article.icon,
-                size: 170,
-                color: Colors.white.withOpacity(0.06),
+            Positioned.fill(
+              child: article.imageUrl.isNotEmpty
+                  ? Image.network(
+                      article.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(
+                            Icons.sports_soccer,
+                            size: 70,
+                            color: Colors.green,
+                          ),
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.sports_soccer,
+                        size: 70,
+                        color: Colors.green,
+                      ),
+                    ),
+            ),
+
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.9),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
+
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
-                mainAxisAlignment:
-                    MainAxisAlignment.end,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1332,42 +1317,40 @@ class FeaturedNewsCard extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.greenAccent
-                          .withOpacity(0.15),
+                      color: Colors.green,
                       borderRadius:
                           BorderRadius.circular(20),
                     ),
                     child: Text(
-                      article.category.toUpperCase(),
+                      article.category,
                       style: const TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    article.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   Text(
-                    article.description,
-                    maxLines: 2,
+                    article.title,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    '${article.source} • ${formatNewsTime(article.publishedAt)}',
+                    style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -1379,6 +1362,7 @@ class FeaturedNewsCard extends StatelessWidget {
     );
   }
 }
+
 
 // ============================================================
 // NEWS LIST CARD
@@ -1395,13 +1379,13 @@ class NewsListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: const Color(0xFF151B17),
       margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF12161D),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(14),
         onTap: () {
           Navigator.push(
             context,
@@ -1413,25 +1397,39 @@ class NewsListCard extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(10),
           child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 75,
-                height: 75,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF183D2E),
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  article.icon,
-                  size: 35,
-                  color: Colors.greenAccent,
+              ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 105,
+                  height: 85,
+                  child: article.imageUrl.isNotEmpty
+                      ? Image.network(
+                          article.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (context, error, stackTrace) {
+                            return Icon(
+                              article.icon,
+                              size: 40,
+                              color: Colors.green,
+                            );
+                          },
+                        )
+                      : Icon(
+                          article.icon,
+                          size: 40,
+                          color: Colors.green,
+                        ),
                 ),
               ),
 
-              const SizedBox(width: 13),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: Column(
@@ -1441,42 +1439,36 @@ class NewsListCard extends StatelessWidget {
                     Text(
                       article.category,
                       style: const TextStyle(
-                        color: Colors.greenAccent,
+                        color: Colors.green,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
 
                     Text(
                       article.title,
-                      maxLines: 2,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
                     const SizedBox(height: 6),
 
-                    const Text(
-                      'Kickoff Kings • Latest',
-                      style: TextStyle(
-                        color: Colors.white38,
+                    Text(
+                      '${article.source} • ${formatNewsTime(article.publishedAt)}',
+                      style: const TextStyle(
+                        color: Colors.white54,
                         fontSize: 11,
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 5),
-
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.white38,
               ),
             ],
           ),
@@ -1485,8 +1477,10 @@ class NewsListCard extends StatelessWidget {
     );
   }
 }
+
+
 // ============================================================
-// NEWS DETAIL
+// NEWS DETAIL PAGE
 // ============================================================
 
 class NewsDetailPage extends StatelessWidget {
@@ -1500,146 +1494,135 @@ class NewsDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B0F0D),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF0B0F0D),
         title: const Text('News'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          if (article.imageUrl.isNotEmpty)
-            ClipRRect(
-              borderRadius:
-                  BorderRadius.circular(22),
-              child: Image.network(
-                article.imageUrl,
-                height: 230,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            if (article.imageUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  article.imageUrl,
+                  width: double.infinity,
+                  height: 220,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) {
+                    return Container(
+                      height: 220,
+                      color: const Color(0xFF17201A),
+                      child: Center(
+                        child: Icon(
+                          article.icon,
+                          size: 70,
+                          color: Colors.green,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
+            else
+              Container(
+                height: 220,
                 width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
-                  return Container(
-                    height: 230,
-                    decoration: BoxDecoration(
-                      color:
-                          const Color(0xFF183D2E),
-                      borderRadius:
-                          BorderRadius.circular(22),
-                    ),
-                    child: const Icon(
-                      Icons.sports_soccer,
-                      size: 100,
-                      color: Colors.greenAccent,
-                    ),
-                  );
-                },
-              ),
-            )
-          else
-            Container(
-              height: 230,
-              decoration: BoxDecoration(
-                color: const Color(0xFF183D2E),
-                borderRadius:
-                    BorderRadius.circular(22),
-              ),
-              child: const Icon(
-                Icons.sports_soccer,
-                size: 100,
-                color: Colors.greenAccent,
-              ),
-            ),
-
-          const SizedBox(height: 20),
-
-          Text(
-            article.category.toUpperCase(),
-            style: const TextStyle(
-              color: Colors.greenAccent,
-              fontWeight: FontWeight.w900,
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            article.title,
-            style: const TextStyle(
-              fontSize: 27,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  article.source,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontWeight: FontWeight.bold,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF17201A),
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Icon(
+                    article.icon,
+                    size: 70,
+                    color: Colors.green,
                   ),
                 ),
               ),
-              Text(
-                formatNewsTime(
-  article.publishedAt ?? DateTime.now(),
-),
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 12,
-                ),
+
+            const SizedBox(height: 18),
+
+            Text(
+              article.category,
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 25),
-
-          Text(
-            article.description,
-            style: const TextStyle(
-              fontSize: 17,
-              height: 1.6,
-              color: Colors.white70,
             ),
-          ),
 
-          const SizedBox(height: 25),
+            const SizedBox(height: 8),
 
-          if (article.articleUrl.isNotEmpty)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Opening the original article will be added next.',
+            Text(
+              article.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              '${article.source} • ${formatNewsTime(article.publishedAt)}',
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 13,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              article.description.isNotEmpty
+                  ? article.description
+                  : 'No description available for this story.',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            if (article.articleUrl.isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Opening the original article will be added next.',
+                        ),
                       ),
+                    );
+                  },
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text(
+                    'READ ORIGINAL ARTICLE',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical: 14,
                     ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.open_in_new,
-                ),
-                label: const Text(
-                  'Read Original Article',
+                  ),
                 ),
               ),
-            ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'Kickoff Kings • News',
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 12,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1650,9 +1633,13 @@ class NewsDetailPage extends StatelessWidget {
 // NEWS TIME FORMAT
 // ============================================================
 
-String formatNewsTime(DateTime date) {
-  final difference =
-      DateTime.now().difference(date);
+String formatNewsTime(DateTime? date) {
+  if (date == null) {
+    return 'Recently';
+  }
+
+  final now = DateTime.now();
+  final difference = now.difference(date);
 
   if (difference.inMinutes < 1) {
     return 'Just now';
