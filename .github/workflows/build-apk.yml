@@ -29,6 +29,10 @@ jobs:
       - name: Create Android project
         run: flutter create --project-name kickoff_kings --platforms=android .
 
+      - name: Enable Android Internet permission
+        run: |
+          sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+
       - name: Get dependencies
         run: flutter pub get
 
