@@ -891,67 +891,612 @@ class NewsPage extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 20),
-          const NewsCard(
-            title: 'Latest Football News',
-            subtitle:
-                'Stay updated with the latest football stories.',
+// ============================================================
+// NEWS PAGE
+// ============================================================
+
+class NewsPage extends StatefulWidget {
+  const NewsPage({super.key});
+
+  @override
+  State<NewsPage> createState() => _NewsPageState();
+}
+
+class _NewsPageState extends State<NewsPage> {
+  String selectedCategory = 'All';
+
+  final List<String> categories = const [
+    'All',
+    'Premier League',
+    'Champions League',
+    'Transfers',
+    'World Football',
+  ];
+
+  final List<NewsArticle> articles = const [
+    NewsArticle(
+      category: 'Premier League',
+      title: 'Premier League latest news and updates',
+      description:
+          'Get the latest stories, results and developments from England’s top flight.',
+      icon: Icons.emoji_events,
+    ),
+    NewsArticle(
+      category: 'Champions League',
+      title: 'Champions League latest updates',
+      description:
+          'Follow the biggest stories from Europe’s premier club competition.',
+      icon: Icons.star,
+    ),
+    NewsArticle(
+      category: 'Transfers',
+      title: 'Latest transfer news and rumours',
+      description:
+          'Keep up with the latest transfer activity from clubs around the world.',
+      icon: Icons.swap_horiz,
+    ),
+    NewsArticle(
+      category: 'World Football',
+      title: 'World football latest',
+      description:
+          'The biggest football stories from leagues and competitions around the world.',
+      icon: Icons.public,
+    ),
+    NewsArticle(
+      category: 'Premier League',
+      title: 'Premier League fixtures and results',
+      description:
+          'Stay up to date with fixtures, results and important league developments.',
+      icon: Icons.sports_soccer,
+    ),
+    NewsArticle(
+      category: 'World Football',
+      title: 'Football stories from around the world',
+      description:
+          'Major football developments, teams, players and competitions.',
+      icon: Icons.language,
+    ),
+  ];
+
+  List<NewsArticle> get filteredArticles {
+    if (selectedCategory == 'All') {
+      return articles;
+    }
+
+    return articles
+        .where(
+          (article) =>
+              article.category == selectedCategory,
+        )
+        .toList();
+  }
+
+  Future<void> refreshNews() async {
+    await Future.delayed(
+      const Duration(milliseconds: 800),
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = filteredArticles;
+
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: refreshNews,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            18,
+            16,
+            30,
           ),
-          const NewsCard(
-            title: 'Champions League',
-            subtitle:
-                'Latest Champions League news and updates.',
-          ),
-          const NewsCard(
-            title: 'Premier League',
-            subtitle:
-                'Premier League news, fixtures and results.',
-          ),
-          const NewsCard(
-            title: 'World Football',
-            subtitle:
-                'Major football stories from around the world.',
-          ),
-        ],
+          children: [
+            // ------------------------------------------------
+            // HEADER
+            // ------------------------------------------------
+
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'News',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF14251F),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: IconButton(
+                    onPressed: refreshNews,
+                    icon: const Icon(
+                      Icons.refresh,
+                      color: Colors.greenAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 5),
+
+            const Text(
+              'The latest football stories',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 14,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ------------------------------------------------
+            // CATEGORY FILTERS
+            // ------------------------------------------------
+
+            SizedBox(
+              height: 42,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final category = categories[index];
+                  final isSelected =
+                      category == selectedCategory;
+
+                  return ChoiceChip(
+                    label: Text(category),
+                    selected: isSelected,
+                    onSelected: (_) {
+                      setState(() {
+                        selectedCategory = category;
+                      });
+                    },
+                    selectedColor:
+                        Colors.green.shade700,
+                    backgroundColor:
+                        const Color(0xFF12161D),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white70,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    side: BorderSide(
+                      color: isSelected
+                          ? Colors.green
+                          : Colors.white12,
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // ------------------------------------------------
+            // FEATURED STORY
+            // ------------------------------------------------
+
+            if (filtered.isNotEmpty) ...[
+              const Text(
+                'Featured',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              FeaturedNewsCard(
+                article: filtered.first,
+              ),
+
+              const SizedBox(height: 28),
+            ],
+
+            // ------------------------------------------------
+            // LATEST NEWS
+            // ------------------------------------------------
+
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Latest News',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${filtered.length} stories',
+                  style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            if (filtered.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF12161D),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.article_outlined,
+                      size: 45,
+                      color: Colors.white38,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'No news available',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...filtered
+                  .skip(1)
+                  .map(
+                    (article) => NewsListCard(
+                      article: article,
+                    ),
+                  ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class NewsCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
+// ============================================================
+// NEWS MODEL
+// ============================================================
 
-  const NewsCard({
-    super.key,
+class NewsArticle {
+  final String category;
+  final String title;
+  final String description;
+  final IconData icon;
+
+  const NewsArticle({
+    required this.category,
     required this.title,
-    required this.subtitle,
+    required this.description,
+    required this.icon,
+  });
+}
+
+// ============================================================
+// FEATURED NEWS CARD
+// ============================================================
+
+class FeaturedNewsCard extends StatelessWidget {
+  final NewsArticle article;
+
+  const FeaturedNewsCard({
+    super.key,
+    required this.article,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NewsDetailPage(
+              article: article,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        height: 230,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF183D2E),
+              Color(0xFF0E1713),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              top: -20,
+              child: Icon(
+                article.icon,
+                size: 170,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                mainAxisAlignment:
+                    MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.greenAccent
+                          .withOpacity(0.15),
+                      borderRadius:
+                          BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      article.category.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.greenAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    article.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    article.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// NEWS LIST CARD
+// ============================================================
+
+class NewsListCard extends StatelessWidget {
+  final NewsArticle article;
+
+  const NewsListCard({
+    super.key,
+    required this.article,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFF12161D),
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(15),
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFF173A2D),
-          child: Icon(
-            Icons.article,
-            color: Colors.greenAccent,
+      color: const Color(0xFF12161D),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(17),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NewsDetailPage(
+                article: article,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(
+            children: [
+              Container(
+                width: 75,
+                height: 75,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF183D2E),
+                  borderRadius:
+                      BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  article.icon,
+                  size: 35,
+                  color: Colors.greenAccent,
+                ),
+              ),
+
+              const SizedBox(width: 13),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.category,
+                      style: const TextStyle(
+                        color: Colors.greenAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      article.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    const Text(
+                      'Kickoff Kings • Latest',
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 5),
+
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.white38,
+              ),
+            ],
           ),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+// ============================================================
+// NEWS DETAIL
+// ============================================================
+
+class NewsDetailPage extends StatelessWidget {
+  final NewsArticle article;
+
+  const NewsDetailPage({
+    super.key,
+    required this.article,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('News'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            height: 220,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              color: const Color(0xFF183D2E),
+            ),
+            child: Icon(
+              article.icon,
+              size: 100,
+              color: Colors.greenAccent,
+            ),
           ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(subtitle),
-        ),
+
+          const SizedBox(height: 20),
+
+          Text(
+            article.category.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            article.title,
+            style: const TextStyle(
+              fontSize: 27,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          const Text(
+            'Kickoff Kings • Latest',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 12,
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          Text(
+            article.description,
+            style: const TextStyle(
+              fontSize: 17,
+              height: 1.6,
+              color: Colors.white70,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          const Text(
+            'More football news and updates will appear here as the Kickoff Kings news feed is connected to a live news source.',
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.6,
+              color: Colors.white60,
+            ),
+          ),
+        ],
       ),
     );
   }
