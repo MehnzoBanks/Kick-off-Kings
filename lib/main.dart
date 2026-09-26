@@ -1170,15 +1170,15 @@ class NewsArticle {
   final IconData icon;
 
   const NewsArticle({
-    required this.category,
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.articleUrl,
-    required this.source,
-    required this.publishedAt,
-    required this.icon,
-  });
+  required this.category,
+  required this.title,
+  required this.description,
+  this.imageUrl = '',
+  this.articleUrl = '',
+  this.source = 'Kickoff Kings',
+  this.publishedAt = const DateTime(2026, 1, 1),
+  required this.icon,
+});
 
   factory NewsArticle.fromJson(
     Map<String, dynamic> json,
