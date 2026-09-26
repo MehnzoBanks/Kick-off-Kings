@@ -871,26 +871,7 @@ class FootballApi {
   }
 }
 
-// ============================================================
-// NEWS PAGE
-// ============================================================
 
-class NewsPage extends StatelessWidget {
-  const NewsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const Text(
-            'News',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
 // ============================================================
 // NEWS PAGE
 // ============================================================
