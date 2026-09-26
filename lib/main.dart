@@ -1163,14 +1163,109 @@ class NewsArticle {
   final String category;
   final String title;
   final String description;
+  final String imageUrl;
+  final String articleUrl;
+  final String source;
+  final DateTime publishedAt;
   final IconData icon;
 
   const NewsArticle({
     required this.category,
     required this.title,
     required this.description,
+    required this.imageUrl,
+    required this.articleUrl,
+    required this.source,
+    required this.publishedAt,
     required this.icon,
   });
+
+  factory NewsArticle.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final sourceData = json['source'];
+
+    String sourceName = 'Football News';
+
+    if (sourceData is Map) {
+      sourceName =
+          sourceData['name']?.toString() ??
+              'Football News';
+    }
+
+    final title =
+        json['title']?.toString() ??
+            'Football News';
+
+    final description =
+        json['description']?.toString() ??
+            'Latest football news and updates.';
+
+    final image =
+        json['image']?.toString() ?? '';
+
+    final url =
+        json['url']?.toString() ?? '';
+
+    final published =
+        DateTime.tryParse(
+          json['publishedAt']?.toString() ?? '',
+        ) ??
+        DateTime.now();
+
+    return NewsArticle(
+      category: detectCategory(title),
+      title: title,
+      description: description,
+      imageUrl: image,
+      articleUrl: url,
+      source: sourceName,
+      publishedAt: published.toLocal(),
+      icon: detectIcon(title),
+    );
+  }
+
+  static String detectCategory(String title) {
+    final text = title.toLowerCase();
+
+    if (text.contains('transfer') ||
+        text.contains('signing') ||
+        text.contains('joins') ||
+        text.contains('deal')) {
+      return 'Transfers';
+    }
+
+    if (text.contains('champions league')) {
+      return 'Champions League';
+    }
+
+    if (text.contains('premier league')) {
+      return 'Premier League';
+    }
+
+    return 'World Football';
+  }
+
+  static IconData detectIcon(String title) {
+    final text = title.toLowerCase();
+
+    if (text.contains('transfer') ||
+        text.contains('signing') ||
+        text.contains('joins') ||
+        text.contains('deal')) {
+      return Icons.swap_horiz;
+    }
+
+    if (text.contains('champions league')) {
+      return Icons.star;
+    }
+
+    if (text.contains('premier league')) {
+      return Icons.emoji_events;
+    }
+
+    return Icons.sports_soccer;
+  }
 }
 
 // ============================================================
