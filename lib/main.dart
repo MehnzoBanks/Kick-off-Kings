@@ -6,6 +6,10 @@ void main() {
   runApp(const KickoffKings());
 }
 
+// ============================================================
+// APP
+// ============================================================
+
 class KickoffKings extends StatelessWidget {
   const KickoffKings({super.key});
 
@@ -53,8 +57,10 @@ class _MainPageState extends State<MainPage> {
       body: pages[selected],
       bottomNavigationBar: NavigationBar(
         selectedIndex: selected,
-        onDestinationSelected: (i) {
-          setState(() => selected = i);
+        onDestinationSelected: (index) {
+          setState(() {
+            selected = index;
+          });
         },
         destinations: const [
           NavigationDestination(
@@ -128,7 +134,9 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Live scores, fixtures, news and transfers.',
-                  style: TextStyle(color: Colors.white60),
+                  style: TextStyle(
+                    color: Colors.white60,
+                  ),
                 ),
               ],
             ),
@@ -181,7 +189,7 @@ class NewsItem extends StatelessWidget {
 }
 
 // ============================================================
-// LEAGUES
+// LEAGUE MODEL
 // ============================================================
 
 class League {
@@ -250,7 +258,7 @@ const leagues = [
 ];
 
 // ============================================================
-// MATCHES - LEAGUE LIST FIRST
+// MATCHES - LEAGUE LIST
 // ============================================================
 
 class MatchesPage extends StatelessWidget {
@@ -280,20 +288,26 @@ class MatchesPage extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Select a league',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
               ),
             ),
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 15,
+              ),
               itemCount: leagues.length,
               itemBuilder: (context, index) {
                 final league = leagues[index];
 
                 return Card(
                   color: const Color(0xFF12161D),
-                  margin: const EdgeInsets.only(bottom: 10),
+                  margin: const EdgeInsets.only(
+                    bottom: 10,
+                  ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(12),
                     leading: CircleAvatar(
@@ -311,8 +325,9 @@ class MatchesPage extends StatelessWidget {
                       ),
                     ),
                     subtitle: Text(league.country),
-                    trailing:
-                        const Icon(Icons.chevron_right),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                    ),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -419,28 +434,44 @@ class _LeaguePageState extends State<LeaguePage> {
 
           if (matches.isEmpty) {
             return const Center(
-              child: Text(
-                'No matches found for this league today.',
+              child: Padding(
+                padding: EdgeInsets.all(25),
+                child: Text(
+                  'No matches found for this league today.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
 
-          final live =
-              matches.where((m) => m.isLive).toList();
+          final live = matches
+              .where((match) => match.isLive)
+              .toList();
 
-          final upcoming =
-              matches.where((m) => m.isUpcoming).toList();
+          final upcoming = matches
+              .where((match) => match.isUpcoming)
+              .toList();
 
-          final finished =
-              matches.where((m) => m.isFinished).toList();
+          final finished = matches
+              .where((match) => match.isFinished)
+              .toList();
 
           return RefreshIndicator(
             onRefresh: () async {
-              reload();
-              await future;
+              final newFuture =
+                  FootballApi.matches(widget.league.id);
+
+              setState(() {
+                future = newFuture;
+              });
+
+              await newFuture;
             },
             child: ListView(
-              padding: const EdgeInsets.only(bottom: 20),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(
+                bottom: 20,
+              ),
               children: [
                 if (live.isNotEmpty) ...[
                   const StatusHeader(
@@ -448,7 +479,9 @@ class _LeaguePageState extends State<LeaguePage> {
                     live: true,
                   ),
                   ...live.map(
-                    (m) => MatchTile(match: m),
+                    (match) => MatchTile(
+                      match: match,
+                    ),
                   ),
                 ],
                 if (upcoming.isNotEmpty) ...[
@@ -456,7 +489,9 @@ class _LeaguePageState extends State<LeaguePage> {
                     title: 'NOT STARTED',
                   ),
                   ...upcoming.map(
-                    (m) => MatchTile(match: m),
+                    (match) => MatchTile(
+                      match: match,
+                    ),
                   ),
                 ],
                 if (finished.isNotEmpty) ...[
@@ -464,7 +499,9 @@ class _LeaguePageState extends State<LeaguePage> {
                     title: 'FINISHED',
                   ),
                   ...finished.map(
-                    (m) => MatchTile(match: m),
+                    (match) => MatchTile(
+                      match: match,
+                    ),
                   ),
                 ],
               ],
@@ -493,7 +530,12 @@ class StatusHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        18,
+        18,
+        8,
+      ),
       child: Row(
         children: [
           Icon(
@@ -601,6 +643,10 @@ class MatchTile extends StatelessWidget {
   }
 }
 
+// ============================================================
+// TEAM
+// ============================================================
+
 class Team extends StatelessWidget {
   final String name;
   final String logo;
@@ -616,19 +662,27 @@ class Team extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          right ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: right
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (logo.isNotEmpty)
           Image.network(
             logo,
             width: 32,
             height: 32,
-            errorBuilder: (_, __, ___) =>
-                const Icon(Icons.shield, size: 32),
+            errorBuilder: (_, __, ___) {
+              return const Icon(
+                Icons.shield,
+                size: 32,
+              );
+            },
           )
         else
-          const Icon(Icons.shield, size: 32),
+          const Icon(
+            Icons.shield,
+            size: 32,
+          ),
         const SizedBox(height: 5),
         Text(
           name,
@@ -727,19 +781,336 @@ class FootballMatch {
   }
 
   String get time {
-    final h = date.hour.toString().padLeft(2, '0');
-    final m = date.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+    final hour =
+        date.hour.toString().padLeft(2, '0');
+    final minute =
+        date.minute.toString().padLeft(2, '0');
+
+    return '$hour:$minute';
   }
 }
 
 // ============================================================
-// API
+// FOOTBALL API
 // ============================================================
 
 class FootballApi {
-  static const key =
-      String.fromEnvironment('API_FOOTBALL_KEY');
+  static const String key = String.fromEnvironment(
+    'API_FOOTBALL_KEY',
+  );
 
-  static const base =
-      'https://v3.football.api-s
+  // CORRECT API-FOOTBALL URL
+  static const String base =
+      'https://v3.football.api-sports.io';
+
+  static Future<List<FootballMatch>> matches(
+    int leagueId,
+  ) async {
+    if (key.isEmpty) {
+      throw Exception(
+        'API football key is missing. '
+        'Make sure API_FOOTBALL_KEY is configured.',
+      );
+    }
+
+    final now = DateTime.now();
+
+    // Football seasons normally start around August.
+    // For January-July, use the previous season.
+    final season =
+        now.month < 8 ? now.year - 1 : now.year;
+
+    final date =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+
+    final uri = Uri.parse(
+      '$base/fixtures'
+      '?league=$leagueId'
+      '&season=$season'
+      '&date=$date',
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'x-apisports-key': key,
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Football API error: ${response.statusCode}',
+      );
+    }
+
+    final Map<String, dynamic> data =
+        jsonDecode(response.body);
+
+    if (data['errors'] is Map &&
+        (data['errors'] as Map).isNotEmpty) {
+      throw Exception(
+        'Football API error: ${data['errors']}',
+      );
+    }
+
+    final responseList = data['response'];
+
+    if (responseList is! List) {
+      return [];
+    }
+
+    return responseList
+        .map(
+          (item) => FootballMatch.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+}
+
+// ============================================================
+// NEWS PAGE
+// ============================================================
+
+class NewsPage extends StatelessWidget {
+  const NewsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          const Text(
+            'News',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const NewsCard(
+            title: 'Latest Football News',
+            subtitle:
+                'Stay updated with the latest football stories.',
+          ),
+          const NewsCard(
+            title: 'Champions League',
+            subtitle:
+                'Latest Champions League news and updates.',
+          ),
+          const NewsCard(
+            title: 'Premier League',
+            subtitle:
+                'Premier League news, fixtures and results.',
+          ),
+          const NewsCard(
+            title: 'World Football',
+            subtitle:
+                'Major football stories from around the world.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class NewsCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const NewsCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: const Color(0xFF12161D),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(15),
+        leading: const CircleAvatar(
+          backgroundColor: Color(0xFF173A2D),
+          child: Icon(
+            Icons.article,
+            color: Colors.greenAccent,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Text(subtitle),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TRANSFERS PAGE
+// ============================================================
+
+class TransfersPage extends StatelessWidget {
+  const TransfersPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          const Text(
+            'Transfers',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Latest transfer activity',
+            style: TextStyle(
+              color: Colors.white54,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const TransferCard(
+            player: 'Transfer Updates',
+            detail:
+                'Latest football transfer news will appear here.',
+          ),
+          const TransferCard(
+            player: 'Transfer Window',
+            detail:
+                'Follow major moves between clubs.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TransferCard extends StatelessWidget {
+  final String player;
+  final String detail;
+
+  const TransferCard({
+    super.key,
+    required this.player,
+    required this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: const Color(0xFF12161D),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(15),
+        leading: const CircleAvatar(
+          backgroundColor: Color(0xFF173A2D),
+          child: Icon(
+            Icons.swap_horiz,
+            color: Colors.greenAccent,
+          ),
+        ),
+        title: Text(
+          player,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Text(detail),
+        ),
+      ),
+    );
+  }
+}
+// ============================================================
+// PROFILE PAGE
+// ============================================================
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          const Text(
+            'Profile',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 25),
+          const CircleAvatar(
+            radius: 45,
+            backgroundColor: Color(0xFF173A2D),
+            child: Icon(
+              Icons.person,
+              size: 50,
+              color: Colors.greenAccent,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Center(
+            child: Text(
+              'Football Fan',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          Card(
+            color: const Color(0xFF12161D),
+            child: ListTile(
+              leading: const Icon(
+                Icons.notifications_outlined,
+              ),
+              title: const Text('Notifications'),
+              trailing: Switch(
+                value: true,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+          Card(
+            color: const Color(0xFF12161D),
+            child: const ListTile(
+              leading: Icon(
+                Icons.info_outline,
+              ),
+              title: Text('About Kickoff Kings'),
+              trailing: Icon(
+                Icons.chevron_right,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+      
