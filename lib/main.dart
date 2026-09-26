@@ -345,12 +345,15 @@ class FootballApi {
 
     final json = jsonDecode(response.body);
 
-    if (json['errors'] != null &&
-        json['errors'].toString() != '{}') {
-      throw Exception(
-        'API error: ${json['errors']}',
-      );
-    }
+    final errors = json['errors'];
+
+if (errors is List && errors.isNotEmpty) {
+  throw Exception('API error: $errors');
+}
+
+if (errors is Map && errors.isNotEmpty) {
+  throw Exception('API error: $errors');
+}
 
     final List<dynamic> responseData =
         json['response'] ?? [];
