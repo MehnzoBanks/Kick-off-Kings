@@ -224,12 +224,52 @@ class _MatchesPageState extends State<MatchesPage> {
   @override
   void initState() {
     super.initState();
-    matches = FootballApi.getTodayFixtures();
+    matches = FootballApi.getLiveFixtures();
   }
 
   void refresh() {
     setState(() {
-      matches = FootballApi.getTodayFixtures();
+      static Future<List<FootballMatch>> getLiveFixtures() async {
+  if (apiKey.isEmpty) {
+    throw Exception('API key was not included in this build.');
+  }
+
+  final uri = Uri.parse(
+    '$baseUrl/fixtures?live=all',
+  );
+
+  final response = await http.get(
+    uri,
+    headers: {
+      'x-apisports-key': apiKey,
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception(
+      'Football API error: ${response.statusCode}',
+    );
+  }
+
+  final json = jsonDecode(response.body);
+
+  final errors = json['errors'];
+
+  if (errors is List && errors.isNotEmpty) {
+    throw Exception('API error: $errors');
+  }
+
+  if (errors is Map && errors.isNotEmpty) {
+    throw Exception('API error: $errors');
+  }
+
+  final List<dynamic> responseData =
+      json['response'] ?? [];
+
+  return responseData
+      .map((item) => FootballMatch.fromJson(item))
+      .toList();
+      }
     });
   }
 
